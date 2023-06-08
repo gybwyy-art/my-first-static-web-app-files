@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+	<head>
+		<style>
+			h1{text-align: left;}
+            div{text-align: left;}
+
+		</style>
+    <link href="//cdn.staticfile.org/layui/2.8.4/css/layui.css" rel="stylesheet">
+
+	</head>
+	<body style="background-color:#FFFFE0;">
+    <script src="//cdn.staticfile.org/layui/2.8.4/layui.js"></script>
+    <div style="padding: 16px;"> 
+      <table class="layui-hide" id="test" lay-filter="test"></table>
+    </div>
+    <form method="POST" enctype="multipart/form-data" action="/update">
+        username:<input type='text' name='username'/>
+        type:<select name="type" >please select
+        <option value="image">image</option>
+        <option value="text">text</option>
+      </select>
+      desc:<input type='type' name='desc'>
+      file:<input type='file' name='file' id="fileField" οnchange="document.getElementById('fileField').value=this.value"/>
+      <button @click="submit">submit</button>
+    </form>
+    <img id = "image"/>
+    <div id="text"></div>
+  </body>
+</html>
+<script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI=" crossorigin="anonymous"></script>
+<script>
+  layui.use(['table', 'dropdown'], function(){
+    var table = layui.table;
+    var dropdown = layui.dropdown;
+    
+    // 创建渲染实例
+    table.render({
+      elem: '#test',
+      url:'/getlist', // 此处为静态模拟数据，实际使用时需换成真实接口
+      width:'1000',
+      totalRow: true, // 开启合计行
+      page: false,
+      cols: [[
+        {field:'username',width:200, title: 'username'},
+        {field:'type', width:200, title: 'type'},
+        {field:'desc', width:200, title: 'desc'},
+        {field:'fileName', width:200, title: 'filename'},
+        {title: "operate",width: 200,align: "left",toolbar: "#userbar",fixed: "right"}
+      ]],
+    });
+    table.on("tool(test)", function (e) {
+      if(e.event == 'detail'){
+        if(e.data.type == "image"){
+          document.getElementById("text").style.display = false
+          var img = document.getElementById("image")
+          img.style.display = true
+          img.setAttribute("src","../static/"+e.data.fileName)
+        }else{
+          document.getElementById("image").style.display = false
+          document.getElementById("image").setAttribute("src","")
+          var text = document.getElementById("text")
+          text.style.display = true
+          $.ajax({
+            type:"get",
+            url:"/getText?fileName="+e.data.fileName,
+            dataType:"json",
+            success:function(res){
+              textList = res.data.content
+              content = 'text content:'
+              $('#text').text(content)
+              textList.forEach(element => {
+                var node=document.createElement("P");
+	              node.textContent = element
+                text.appendChild(node)
+              });
+            },
+          })
+        }
+      }else if(e.event == "delete"){
+        $.ajax({
+          type:"get",
+          url:"/delete?username="+e.data.username,
+          dataType:"json",
+          success:function(res){
+            window.location.reload()
+          },
+        })
+      }
+    })
+  });
+  
+</script>
+<script type="text/html" id="userbar">
+  <a class="layui-btn layui-btn-xs" lay-event="detail">view file</a>
+  <a class="layui-btn layui-btn-xs" lay-event="delete">delete file</a>
+ </script>
